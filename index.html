@@ -1,0 +1,1524 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Rekod Tasmik Digital SKETSA</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        sketsa: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d', 800: '#166534', 900: '#14532d' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Print Styles */
+        @media print {
+            body, html, #app, #view-main, main, #pages-container { 
+                height: auto !important; 
+                overflow: visible !important; 
+                background-color: white !important;
+            }
+            #sidebar, #topbar, .no-print { display: none !important; }
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; border: none !important; padding: 0 !important; }
+            .shadow, .shadow-sm, .shadow-md { box-shadow: none !important; }
+        }
+        
+        .toast {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform: translateY(-20px);
+            opacity: 0;
+        }
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-800 antialiased overflow-x-hidden">
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- APP WRAPPER -->
+    <div id="app" class="h-screen w-full flex flex-col md:flex-row">
+
+        <!-- ================= LOGIN VIEW ================= -->
+        <div id="view-login" class="flex-1 flex items-center justify-center bg-sketsa-50 w-full h-full absolute inset-0 z-40">
+            <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-sketsa-600">
+                <div class="text-center mb-8">
+                    <div id="login-logo-container" class="w-20 h-20 bg-sketsa-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+                        <i class="fas fa-book-open text-3xl text-sketsa-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800" id="login-school-name">SKETSA</h1>
+                    <p class="text-gray-500 text-sm mt-1">Sistem Rekod Tasmik Digital</p>
+                </div>
+                
+                <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Pengguna</label>
+                        <div class="relative">
+                            <i class="fas fa-user absolute left-3 top-3 text-gray-400"></i>
+                            <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sketsa-500 focus:border-sketsa-500 outline-none transition" placeholder="Masukkan ID">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Katalaluan</label>
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3 top-3 text-gray-400"></i>
+                            <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sketsa-500 focus:border-sketsa-500 outline-none transition" placeholder="Masukkan Katalaluan">
+                        </div>
+                    </div>
+                    <button type="submit" class="w-full bg-sketsa-600 hover:bg-sketsa-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition duration-200 flex justify-center items-center gap-2">
+                        <i class="fas fa-sign-in-alt"></i> Log Masuk
+                    </button>
+                </form>
+                <div class="mt-6 text-center text-xs text-gray-500">
+                    <p>Demo Admin: admin / admin</p>
+                    <p>Demo Guru: guru / guru</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN DASHBOARD VIEW ================= -->
+        <div id="view-main" class="hidden flex-1 flex w-full h-full overflow-hidden">
+            
+            <!-- SIDEBAR -->
+            <aside id="sidebar" class="bg-sketsa-800 text-white w-64 flex-shrink-0 flex flex-col transition-transform transform -translate-x-full md:translate-x-0 absolute md:relative z-30 h-full">
+                <div class="p-4 border-b border-sketsa-700 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="sidebar-logo-container" class="flex items-center justify-center w-8 h-8 overflow-hidden rounded">
+                            <i class="fas fa-quran text-2xl text-sketsa-400"></i>
+                        </div>
+                        <h2 class="font-bold text-lg tracking-wide" id="sidebar-school-name">SKETSA</h2>
+                    </div>
+                    <button onclick="toggleSidebar()" class="md:hidden text-white focus:outline-none">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                
+                <div class="p-4 flex items-center gap-3 border-b border-sketsa-700">
+                    <div class="w-10 h-10 rounded-full bg-sketsa-600 flex items-center justify-center font-bold" id="user-avatar">A</div>
+                    <div>
+                        <p class="text-sm font-semibold truncate" id="current-user-name">Admin</p>
+                        <p class="text-xs text-sketsa-300" id="current-user-role">Administrator</p>
+                    </div>
+                </div>
+
+                <nav class="flex-1 overflow-y-auto py-4 space-y-1 hide-scroll">
+                    <a href="#" onclick="navigate('dashboard')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="dashboard">
+                        <i class="fas fa-home w-5 text-center"></i> Dashboard
+                    </a>
+                    <a href="#" onclick="navigate('murid')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="murid">
+                        <i class="fas fa-users w-5 text-center"></i> Murid
+                    </a>
+                    <a href="#" onclick="navigate('tasmik')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition bg-sketsa-900 border-l-4 border-sketsa-400 font-medium" data-target="tasmik">
+                        <i class="fas fa-microphone w-5 text-center"></i> Rekod Tasmik
+                    </a>
+                    <a href="#" onclick="navigate('analisis')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="analisis">
+                        <i class="fas fa-chart-pie w-5 text-center"></i> Analisis
+                    </a>
+                    <a href="#" onclick="navigate('laporan')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="laporan">
+                        <i class="fas fa-file-alt w-5 text-center"></i> Laporan
+                    </a>
+                    
+                    <!-- Admin Only -->
+                    <div id="nav-admin-section">
+                        <div class="px-4 py-2 mt-4 text-xs font-semibold text-sketsa-400 uppercase tracking-wider">Pentadbiran</div>
+                        <a href="#" onclick="navigate('guru')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="guru">
+                            <i class="fas fa-chalkboard-teacher w-5 text-center"></i> Guru
+                        </a>
+                        <a href="#" onclick="navigate('tetapan')" class="nav-item flex items-center gap-3 px-4 py-3 text-sketsa-100 hover:bg-sketsa-700 hover:text-white transition" data-target="tetapan">
+                            <i class="fas fa-cog w-5 text-center"></i> Tetapan
+                        </a>
+                    </div>
+                </nav>
+
+                <div class="p-4 border-t border-sketsa-700">
+                    <button onclick="handleLogout()" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded transition">
+                        <i class="fas fa-sign-out-alt"></i> Log Keluar
+                    </button>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT AREA -->
+            <main class="flex-1 flex flex-col h-full bg-gray-50 overflow-hidden relative">
+                <!-- TOPBAR -->
+                <header id="topbar" class="bg-white shadow-sm h-16 flex items-center justify-between px-4 z-20 flex-shrink-0">
+                    <div class="flex items-center gap-3">
+                        <button onclick="toggleSidebar()" class="md:hidden text-gray-600 hover:text-sketsa-600 focus:outline-none">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <h2 class="text-xl font-bold text-gray-800" id="page-title">Dashboard</h2>
+                    </div>
+                    <div class="text-sm font-medium text-gray-500 hidden sm:block">
+                        <i class="far fa-calendar-alt mr-1"></i> <span id="current-date"></span>
+                    </div>
+                </header>
+
+                <!-- PAGES CONTAINER -->
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 hide-scroll print-container" id="pages-container">
+                    
+                    <!-- ================= DASHBOARD PAGE ================= -->
+                    <div id="page-dashboard" class="page-section hidden">
+                        <!-- Summary Cards -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2"><i class="fas fa-users text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Jum. Murid</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-murid">0</p>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center mb-2"><i class="fas fa-check-circle text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Tasmik Bulan Ini</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-tasmik">0</p>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-yellow-100 text-yellow-600 flex items-center justify-center mb-2"><i class="fas fa-book-reader text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Murid Iqra'</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-iqra">0</p>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2"><i class="fas fa-book-open text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Murid Al-Quran</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-quran">0</p>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center mb-2"><i class="fas fa-award text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Murid Khatam</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-khatam">0</p>
+                            </div>
+                            <div class="bg-white rounded-xl shadow-sm p-4 border border-gray-100 flex flex-col items-center justify-center text-center">
+                                <div class="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mb-2"><i class="fas fa-chalkboard-teacher text-lg"></i></div>
+                                <h3 class="text-gray-500 text-xs font-semibold uppercase">Jum. Guru</h3>
+                                <p class="text-2xl font-bold text-gray-800 mt-1" id="dash-tot-guru">0</p>
+                            </div>
+                        </div>
+
+                        <!-- Charts Row -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-bold text-gray-700 mb-4">Rekod Tasmik 6 Bulan Terakhir</h3>
+                                <div class="relative h-64 w-full"><canvas id="chartDashBulan"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-bold text-gray-700 mb-4">Rekod Tasmik Mengikut Kelas (Bulan Ini)</h3>
+                                <div class="relative h-64 w-full"><canvas id="chartDashKelas"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= MURID PAGE ================= -->
+                    <div id="page-murid" class="page-section hidden">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-4">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <div class="relative">
+                                        <i class="fas fa-search absolute left-3 top-2.5 text-gray-400"></i>
+                                        <input type="text" id="search-murid" onkeyup="renderMuridTable()" placeholder="Cari nama murid..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm w-full sm:w-64 focus:ring-sketsa-500 focus:border-sketsa-500">
+                                    </div>
+                                    <select id="filter-kelas-murid" onchange="renderMuridTable()" class="border border-gray-300 rounded-lg text-sm py-2 px-3 focus:ring-sketsa-500 focus:border-sketsa-500">
+                                        <option value="">Semua Kelas</option>
+                                        <!-- auto populate -->
+                                    </select>
+                                </div>
+                                <div class="flex gap-2">
+                                    <button onclick="openModal('modal-murid')" class="bg-sketsa-600 hover:bg-sketsa-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                                        <i class="fas fa-plus mr-1"></i> Tambah Murid
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                                            <th class="p-4 font-semibold">Nama Murid</th>
+                                            <th class="p-4 font-semibold">Kelas</th>
+                                            <th class="p-4 font-semibold">Status Bacaan</th>
+                                            <th class="p-4 font-semibold">Tahap Semasa</th>
+                                            <th class="p-4 font-semibold text-center">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-murid" class="divide-y divide-gray-100 text-sm">
+                                        <!-- render logic -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="empty-murid" class="hidden p-8 text-center text-gray-500">Tiada rekod dijumpai.</div>
+                        </div>
+                    </div>
+
+                    <!-- ================= GURU PAGE (ADMIN ONLY) ================= -->
+                    <div id="page-guru" class="page-section hidden">
+                         <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-4 flex justify-between items-center">
+                             <h3 class="font-bold text-gray-700">Senarai Guru</h3>
+                             <button onclick="openModal('modal-guru')" class="bg-sketsa-600 hover:bg-sketsa-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm">
+                                 <i class="fas fa-plus mr-1"></i> Tambah Guru
+                             </button>
+                         </div>
+                         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                                            <th class="p-4 font-semibold">Nama Guru</th>
+                                            <th class="p-4 font-semibold">Jawatan</th>
+                                            <th class="p-4 font-semibold">Username</th>
+                                            <th class="p-4 font-semibold text-center">Tindakan</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-guru" class="divide-y divide-gray-100 text-sm">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= REKOD TASMIK PAGE ================= -->
+                    <div id="page-tasmik" class="page-section hidden max-w-3xl mx-auto">
+                        <div class="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+                            <div class="bg-sketsa-600 px-6 py-4">
+                                <h3 class="text-white font-bold text-lg"><i class="fas fa-edit mr-2"></i> Borang Rekod Tasmik Baharu</h3>
+                            </div>
+                            <form id="form-tasmik" onsubmit="handleSimpanTasmik(event)" class="p-6 space-y-5">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Tarikh <span class="text-red-500">*</span></label>
+                                        <input type="date" id="tas-tarikh" required class="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-sketsa-500 focus:border-sketsa-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Guru Pentasmik</label>
+                                        <input type="text" id="tas-guru" readonly class="w-full border-gray-200 bg-gray-50 rounded-lg p-2.5 border text-gray-600 cursor-not-allowed">
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Kelas <span class="text-red-500">*</span></label>
+                                        <select id="tas-kelas" required onchange="onKelasSelectTasmik()" class="w-full border-gray-300 rounded-lg p-2.5 border focus:ring-sketsa-500 focus:border-sketsa-500">
+                                            <option value="">-- Pilih Kelas --</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Pilih Murid <span class="text-red-500">*</span></label>
+                                        <select id="tas-murid" required onchange="onMuridSelect()" disabled class="w-full border-gray-300 bg-gray-50 rounded-lg p-2.5 border focus:ring-sketsa-500 focus:border-sketsa-500 cursor-not-allowed transition">
+                                            <option value="">-- Sila Pilih Kelas Dahulu --</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <!-- Paparan Rekod Terdahulu -->
+                                <div id="tas-rekod-terdahulu-container" class="hidden mt-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-4 text-sm flex gap-3 items-start shadow-sm">
+                                    <i class="fas fa-history mt-0.5 text-blue-600 text-lg"></i>
+                                    <div>
+                                        <span class="font-bold block mb-1 text-blue-900">Rekod Terakhir Murid:</span>
+                                        <span id="tas-rekod-terdahulu-text" class="text-blue-700"></span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-5">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Jenis Bacaan <span class="text-red-500">*</span></label>
+                                    <select id="tas-jenis" required onchange="toggleTasmikFields()" class="w-full md:w-1/2 border-gray-300 rounded-lg p-2.5 border focus:ring-sketsa-500 focus:border-sketsa-500 font-medium">
+                                        <option value="Iqra' 1">Iqra' 1</option>
+                                        <option value="Iqra' 2">Iqra' 2</option>
+                                        <option value="Iqra' 3">Iqra' 3</option>
+                                        <option value="Iqra' 4">Iqra' 4</option>
+                                        <option value="Iqra' 5">Iqra' 5</option>
+                                        <option value="Iqra' 6">Iqra' 6</option>
+                                        <option value="Al-Quran">Al-Quran</option>
+                                        <option value="Khatam">Khatam</option>
+                                    </select>
+                                </div>
+
+                                <!-- Dynamic Fields -->
+                                <div id="div-iqra" class="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mt-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Muka Surat</label>
+                                        <input type="number" id="tas-iqra-mula" min="1" class="w-full md:w-1/3 border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500">
+                                    </div>
+                                </div>
+
+                                <div id="div-quran" class="hidden bg-emerald-50 p-4 rounded-lg border border-emerald-200 grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Juzuk</label>
+                                        <input type="number" id="tas-quran-juz" min="1" max="30" class="w-full border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Muka Surat</label>
+                                        <input type="number" id="tas-quran-mula" min="1" class="w-full border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500">
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5 pt-2">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Bacaan <span class="text-red-500">*</span></label>
+                                        <div class="flex gap-4 mt-2">
+                                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="tas-status" value="Lancar" required class="text-sketsa-600 focus:ring-sketsa-500"> <span class="text-sm">Lancar</span></label>
+                                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="tas-status" value="Belum Lancar" class="text-sketsa-600 focus:ring-sketsa-500"> <span class="text-sm">Belum Lancar</span></label>
+                                            <label class="flex items-center gap-1 cursor-pointer"><input type="radio" name="tas-status" value="Perlu Ulang" class="text-sketsa-600 focus:ring-sketsa-500"> <span class="text-sm">Perlu Ulang</span></label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Guru (Pilihan)</label>
+                                        <textarea id="tas-catatan" rows="2" class="w-full border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-100 flex justify-end">
+                                    <button type="submit" class="bg-sketsa-600 hover:bg-sketsa-700 text-white px-8 py-3 rounded-lg font-bold shadow-md transition transform hover:scale-105">
+                                        <i class="fas fa-save mr-2"></i> Simpan Rekod
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- ================= ANALISIS PAGE ================= -->
+                    <div id="page-analisis" class="page-section hidden">
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-bold text-gray-700 mb-4 text-center">Taburan Tahap Iqra'</h3>
+                                <div class="relative h-64 w-full flex justify-center"><canvas id="chartAnaIqra"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                                <h3 class="font-bold text-gray-700 mb-4 text-center">Status Keseluruhan (Iqra vs Quran vs Khatam)</h3>
+                                <div class="relative h-64 w-full flex justify-center"><canvas id="chartAnaStatus"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                                <h3 class="font-bold text-gray-700 mb-4 text-center">Status Keseluruhan (Iqra vs Quran vs Khatam)</h3>
+                                <div class="relative h-64 w-full flex justify-center"><canvas id="chartAnaStatus"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+                                    <h3 class="font-bold text-gray-700">Analisis Tahap Bacaan Murid Mengikut Kelas</h3>
+                                    <select id="ana-kelas-filter" onchange="updateChartAnaKelas()" class="border-gray-300 rounded-lg border p-2 text-sm focus:ring-sketsa-500 min-w-[200px]">
+                                        <option value="">Semua Kelas</option>
+                                    </select>
+                                </div>
+                                <div class="relative h-64 w-full"><canvas id="chartAnaKelas"></canvas></div>
+                            </div>
+                            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+                                <h3 class="font-bold text-gray-700 mb-4">Jumlah Rekod Mengikut Guru (Bulan Semasa)</h3>
+                                <div class="relative h-64 w-full"><canvas id="chartAnaGuru"></canvas></div>
+                            </div>
+                        </div>
+
+                        <!-- Senarai Tiada Rekod -->
+                        <div class="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden mt-6">
+                            <div class="bg-red-50 px-4 py-3 border-b border-red-200">
+                                <h3 class="font-bold text-red-700"><i class="fas fa-exclamation-triangle mr-2"></i> Murid Tiada Rekod Tasmik (Bulan Ini)</h3>
+                            </div>
+                            <div class="p-4">
+                                <ul id="list-tiada-rekod" class="list-disc pl-5 text-sm text-gray-700 grid grid-cols-1 md:grid-cols-3 gap-2">
+                                    <!-- populated via JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= LAPORAN PAGE ================= -->
+                    <div id="page-laporan" class="page-section hidden">
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-4 no-print">
+                            <div class="flex flex-wrap gap-4 items-end">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Bulan</label>
+                                    <input type="month" id="lap-bulan" onchange="generateLaporan()" class="border-gray-300 rounded border p-2 text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-500 mb-1">Kelas</label>
+                                    <select id="lap-kelas" onchange="generateLaporan()" class="border-gray-300 rounded border p-2 text-sm">
+                                        <option value="">Semua Kelas</option>
+                                    </select>
+                                </div>
+                                <div class="flex-1 flex justify-end gap-2">
+                                    <button onclick="cetakPDF()" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded text-sm font-medium shadow-sm transition">
+                                        <i class="fas fa-print mr-1"></i> Cetak PDF
+                                    </button>
+                                    <button onclick="exportExcel()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-medium shadow-sm transition">
+                                        <i class="fas fa-file-excel mr-1"></i> Eksport CSV
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Printable Area -->
+                        <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100" id="print-area">
+                            <div class="text-center mb-6">
+                                <h2 class="text-2xl font-bold uppercase" id="lap-title-sekolah">SKETSA</h2>
+                                <h3 class="text-lg font-semibold text-gray-700">Laporan Rekod Tasmik</h3>
+                                <p class="text-sm text-gray-500 mt-1" id="lap-subtitle">Semua Kelas - Bulan Semasa</p>
+                            </div>
+                            
+                            <table class="w-full text-left border-collapse border border-gray-200">
+                                <thead>
+                                    <tr class="bg-gray-100 text-gray-700 text-xs uppercase tracking-wider border-b border-gray-200">
+                                        <th class="p-3 border border-gray-200">Tarikh</th>
+                                        <th class="p-3 border border-gray-200">Nama Murid</th>
+                                        <th class="p-3 border border-gray-200">Kelas</th>
+                                        <th class="p-3 border border-gray-200">Jenis</th>
+                                        <th class="p-3 border border-gray-200">Pencapaian</th>
+                                        <th class="p-3 border border-gray-200">Status</th>
+                                        <th class="p-3 border border-gray-200">Guru</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-laporan" class="divide-y divide-gray-200 text-sm">
+                                    <!-- js populated -->
+                                </tbody>
+                            </table>
+                            <div id="empty-laporan" class="hidden p-8 text-center text-gray-500 border border-t-0 border-gray-200">Tiada rekod dijumpai untuk kriteria ini.</div>
+                        </div>
+                    </div>
+
+                    <!-- ================= TETAPAN PAGE ================= -->
+                    <div id="page-tetapan" class="page-section hidden max-w-2xl">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                            <h3 class="font-bold text-gray-800 text-lg mb-4 border-b pb-2">Tetapan Sistem</h3>
+                            
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Logo Sekolah</label>
+                                <div class="flex items-center gap-4">
+                                    <div id="preview-logo-tetapan" class="w-16 h-16 bg-gray-100 border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                                        <i class="fas fa-image text-gray-400 text-2xl"></i>
+                                    </div>
+                                    <div class="flex-1">
+                                        <input type="file" id="set-logo" accept="image/*" onchange="handleLogoUpload(event)" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-sketsa-50 file:text-sketsa-700 hover:file:bg-sketsa-100 cursor-pointer">
+                                        <p class="text-xs text-gray-500 mt-1">Sila muat naik imej (PNG/JPG).</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-6">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Nama Sekolah</label>
+                                <div class="flex gap-2">
+                                    <input type="text" id="set-namasekolah" class="flex-1 border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500">
+                                    <button onclick="saveTetapanSekolah()" class="bg-sketsa-600 text-white px-4 rounded-lg text-sm hover:bg-sketsa-700">Simpan</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Pengurusan Kelas</label>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="text" id="set-newkelas" placeholder="Nama kelas baru..." class="flex-1 border-gray-300 rounded-lg p-2 border focus:ring-sketsa-500 text-sm">
+                                    <button onclick="tambahKelas()" class="bg-blue-600 text-white px-4 rounded-lg text-sm hover:bg-blue-700"><i class="fas fa-plus"></i> Tambah</button>
+                                </div>
+                                <ul id="list-kelas" class="border border-gray-200 rounded-lg divide-y divide-gray-200 text-sm max-h-60 overflow-y-auto">
+                                    <!-- populated -->
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ================= PROFIL MURID PAGE (Sub-view) ================= -->
+                    <div id="page-profil" class="page-section hidden">
+                        <button onclick="navigate('murid')" class="mb-4 text-sketsa-600 hover:text-sketsa-800 font-medium text-sm flex items-center"><i class="fas fa-arrow-left mr-2"></i> Kembali ke Senarai Murid</button>
+                        
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                            <div class="bg-sketsa-800 px-6 py-8 text-white relative">
+                                <div class="absolute top-4 right-4 text-6xl opacity-10"><i class="fas fa-user-graduate"></i></div>
+                                <h2 class="text-3xl font-bold" id="pro-nama">Nama Murid</h2>
+                                <p class="text-sketsa-200 mt-1"><span id="pro-kelas">Kelas</span></p>
+                            </div>
+                            <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 border-b border-gray-100">
+                                <div><p class="text-xs text-gray-500 uppercase font-semibold">Status Semasa</p><p class="font-bold text-lg text-sketsa-700" id="pro-status">Iqra'</p></div>
+                                <div><p class="text-xs text-gray-500 uppercase font-semibold">Tahap</p><p class="font-bold text-lg text-gray-800" id="pro-tahap">Tahap 3</p></div>
+                                <div><p class="text-xs text-gray-500 uppercase font-semibold">Jum. Tasmik</p><p class="font-bold text-lg text-gray-800" id="pro-jum">12</p></div>
+                                <div><p class="text-xs text-gray-500 uppercase font-semibold">Tarikh Terakhir</p><p class="font-bold text-lg text-gray-800" id="pro-lastdate">-</p></div>
+                            </div>
+                        </div>
+
+                        <h3 class="font-bold text-gray-800 mb-3 text-lg">Sejarah Tasmik</h3>
+                        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 text-gray-600 text-xs uppercase tracking-wider border-b">
+                                        <th class="p-4 font-semibold">Tarikh</th>
+                                        <th class="p-4 font-semibold">Jenis</th>
+                                        <th class="p-4 font-semibold">Pencapaian</th>
+                                        <th class="p-4 font-semibold">Status</th>
+                                        <th class="p-4 font-semibold">Guru</th>
+                                        <th class="p-4 font-semibold">Catatan</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-profil-rekod" class="divide-y divide-gray-100 text-sm">
+                                </tbody>
+                            </table>
+                             <div id="empty-profil-rekod" class="hidden p-8 text-center text-gray-500">Belum ada rekod tasmik.</div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- MODAL: Tambah/Edit Murid -->
+    <div id="modal-murid" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-sketsa-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg" id="modal-murid-title">Tambah Murid</h3>
+                <button onclick="closeModal('modal-murid')" class="text-white hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-modal-murid" onsubmit="saveMurid(event)" class="p-6 space-y-4">
+                <input type="hidden" id="m-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh <span class="text-red-500">*</span></label>
+                    <input type="text" id="m-nama" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Kelas <span class="text-red-500">*</span></label>
+                    <select id="m-kelas" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500"></select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status Awal <span class="text-red-500">*</span></label>
+                        <select id="m-status" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                            <option value="Iqra'">Iqra'</option>
+                            <option value="Al-Quran">Al-Quran</option>
+                            <option value="Khatam">Khatam</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tahap / Juz Semasa</label>
+                        <input type="text" id="m-tahap" placeholder="Cth: Iqra 3 / Juz 1" class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="closeModal('modal-murid')" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-sketsa-600 hover:bg-sketsa-700 text-white rounded font-medium">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Pengesahan (Confirm) -->
+    <div id="modal-confirm" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100">
+            <div class="p-6 text-center">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Adakah anda pasti?</h3>
+                <p class="text-sm text-gray-600 mb-6" id="confirm-msg">Mesej pengesahan di sini.</p>
+                <div class="flex justify-center gap-3">
+                    <button onclick="closeConfirm()" class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium transition">Batal</button>
+                    <button onclick="executeConfirm()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition shadow-sm">Ya, Padam</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Tambah/Edit Guru -->
+    <div id="modal-guru" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
+            <div class="bg-sketsa-600 px-6 py-4 flex justify-between items-center">
+                <h3 class="text-white font-bold text-lg" id="modal-guru-title">Tambah Guru</h3>
+                <button onclick="closeModal('modal-guru')" class="text-white hover:text-gray-200"><i class="fas fa-times text-xl"></i></button>
+            </div>
+            <form id="form-modal-guru" onsubmit="saveGuru(event)" class="p-6 space-y-4">
+                <input type="hidden" id="g-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Penuh <span class="text-red-500">*</span></label>
+                    <input type="text" id="g-nama" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jawatan</label>
+                    <input type="text" id="g-jawatan" class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ID Pengguna (Username) <span class="text-red-500">*</span></label>
+                        <input type="text" id="g-username" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Katalaluan (Password) <span class="text-red-500">*</span></label>
+                        <input type="text" id="g-password" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                    </div>
+                </div>
+                <div class="pt-4 flex justify-end gap-2 border-t mt-4">
+                    <button type="button" onclick="closeModal('modal-guru')" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-sketsa-600 hover:bg-sketsa-700 text-white rounded font-medium">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // --- 1. STATE MANAGEMENT (IN-MEMORY DATABASE) ---
+        // Pangkalan data simulasi menyimpan memori setempat (plug & play)
+        let state = {
+            currentUser: null,
+            tetapan: { namaSekolah: 'SKETSA', logo: null },
+            kelas: ['1 Arif', '2 Bestari', '3 Cerdik', '4 Dedikasi', '5 Elit', '6 Fikrah'],
+            guru: [
+                { id: 'g1', nama: 'Ustaz Ahmad', jawatan: 'Guru GPI', username: 'guru', password: 'guru', peranan: 'guru' },
+                { id: 'g2', nama: 'Ustazah Siti', jawatan: 'Ketua Panitia', username: 'admin', password: 'admin', peranan: 'admin' }
+            ],
+            murid: [
+                { id: 'm1', nama: 'Ahmad Albab', kelas: '1 Arif', status: "Iqra'", tahap: "Tahap 3", tarikhDaftar: '2024-01-02' },
+                { id: 'm2', nama: 'Siti Nurhaliza', kelas: '2 Bestari', status: "Al-Quran", tahap: "Juz 2", tarikhDaftar: '2024-01-03' },
+                { id: 'm3', nama: 'Amiruddin Ali', kelas: '3 Cerdik', status: "Iqra'", tahap: "Tahap 5", tarikhDaftar: '2024-01-05' },
+                { id: 'm4', nama: 'Fatimah Az-Zahra', kelas: '4 Dedikasi', status: "Khatam", tahap: "Khatam", tarikhDaftar: '2023-01-10' }
+            ],
+            rekod: [] // Will hold tasmik records
+        };
+
+        // Populate dummy records for charts to look good immediately
+        const today = new Date();
+        for(let i=0; i<15; i++) {
+            let mId = state.murid[Math.floor(Math.random() * state.murid.length)].id;
+            let mData = state.murid.find(m => m.id === mId);
+            let gId = state.guru[Math.floor(Math.random() * state.guru.length)].id;
+            
+            // Random date within last 3 months
+            let pastDate = new Date();
+            pastDate.setDate(today.getDate() - Math.floor(Math.random() * 90));
+            
+            state.rekod.push({
+                id: 'r' + Date.now() + i,
+                tarikh: pastDate.toISOString().split('T')[0],
+                muridId: mId,
+                kelas: mData.kelas,
+                guruId: gId,
+                jenis: mData.status,
+                iqraTahap: mData.status === "Iqra'" ? Math.floor(Math.random() * 6)+1 : '',
+                quranJuz: mData.status !== "Iqra'" ? Math.floor(Math.random() * 30)+1 : '',
+                quranSurah: '',
+                msMula: Math.floor(Math.random() * 20)+1, msAkhir: '',
+                statusBacaan: 'Lancar',
+                catatan: 'Bagus'
+            });
+        }
+
+        // --- 2. CORE FUNCTIONS ---
+        
+        function showToast(msg, type='success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colorClass = type === 'success' ? 'bg-green-600' : 'bg-red-600';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            toast.className = `${colorClass} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 toast min-w-[250px]`;
+            toast.innerHTML = `<i class="fas ${icon}"></i> <span>${msg}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- 3. AUTHENTICATION ---
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value;
+            const p = document.getElementById('login-password').value;
+            
+            const user = state.guru.find(g => g.username === u && g.password === p);
+            if (user) {
+                state.currentUser = user;
+                initApp();
+                showToast(`Selamat datang, ${user.nama}`);
+            } else {
+                showToast('ID atau Katalaluan salah!', 'error');
+            }
+        }
+
+        function handleLogout() {
+            state.currentUser = null;
+            document.getElementById('view-main').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+            document.getElementById('login-password').value = '';
+        }
+
+        // --- 4. INITIALIZATION & ROUTING ---
+        let currentChartInstances = {};
+
+        function initApp() {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('view-main').classList.remove('hidden');
+            
+            // Setup User UI
+            document.getElementById('current-user-name').innerText = state.currentUser.nama;
+            document.getElementById('current-user-role').innerText = state.currentUser.peranan === 'admin' ? 'Administrator' : 'Guru Pentasmik';
+            document.getElementById('user-avatar').innerText = state.currentUser.nama.charAt(0).toUpperCase();
+            
+            // Setup Date
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('current-date').innerText = new Date().toLocaleDateString('ms-MY', options);
+
+            // Populate Dropdowns
+            populateKelasDropdowns();
+            populateMuridDropdowns();
+
+            // Setup Admin access
+            if (state.currentUser.peranan !== 'admin') {
+                document.getElementById('nav-admin-section').style.display = 'none';
+            } else {
+                document.getElementById('nav-admin-section').style.display = 'block';
+            }
+
+            // Set default date for Tasmik form
+            document.getElementById('tas-tarikh').valueAsDate = new Date();
+            document.getElementById('tas-guru').value = state.currentUser.nama;
+            
+            // Set current month for Laporan
+            const currentMonthStr = today.toISOString().slice(0,7);
+            document.getElementById('lap-bulan').value = currentMonthStr;
+
+            navigate('dashboard');
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            sb.classList.toggle('-translate-x-full');
+        }
+
+        function navigate(pageId, data = null) {
+            // Hide all pages
+            document.querySelectorAll('.page-section').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${pageId}`).classList.remove('hidden');
+            
+            // Update active nav
+            document.querySelectorAll('.nav-item').forEach(n => {
+                n.classList.remove('bg-sketsa-900', 'border-l-4', 'border-sketsa-400', 'font-medium');
+            });
+            const activeNav = document.querySelector(`.nav-item[data-target="${pageId}"]`);
+            if(activeNav) activeNav.classList.add('bg-sketsa-900', 'border-l-4', 'border-sketsa-400', 'font-medium');
+
+            // Titles
+            const titles = { dashboard: 'Dashboard', murid: 'Pengkalan Data Murid', guru: 'Senarai Guru', tasmik: 'Rekod Tasmik Baru', analisis: 'Analisis Data', laporan: 'Laporan', tetapan: 'Tetapan Sistem', profil: 'Profil Murid' };
+            document.getElementById('page-title').innerText = titles[pageId];
+
+            // Render specific page
+            if (pageId === 'dashboard') renderDashboard();
+            if (pageId === 'murid') renderMuridTable();
+            if (pageId === 'guru') renderGuruTable();
+            if (pageId === 'analisis') renderAnalisis();
+            if (pageId === 'laporan') generateLaporan();
+            if (pageId === 'tetapan') renderTetapan();
+            if (pageId === 'profil' && data) renderProfil(data);
+            
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        // --- 5. RENDERERS ---
+
+        function populateKelasDropdowns() {
+            const html = state.kelas.map(k => `<option value="${k}">${k}</option>`).join('');
+            document.getElementById('filter-kelas-murid').innerHTML = `<option value="">Semua Kelas</option>` + html;
+            document.getElementById('m-kelas').innerHTML = html;
+            document.getElementById('lap-kelas').innerHTML = `<option value="">Semua Kelas</option>` + html;
+            document.getElementById('tas-kelas').innerHTML = `<option value="">-- Pilih Kelas --</option>` + html;
+            
+            const anaFilter = document.getElementById('ana-kelas-filter');
+            if(anaFilter) anaFilter.innerHTML = `<option value="">Semua Kelas</option>` + html;
+            
+            // Tetapan list
+            document.getElementById('list-kelas').innerHTML = state.kelas.map(k => 
+                `<li class="px-4 py-2 flex justify-between items-center bg-white">${k} <button onclick="hapusKelas('${k}')" class="text-red-500 hover:text-red-700"><i class="fas fa-trash"></i></button></li>`
+            ).join('');
+        }
+
+        function renderDashboard() {
+            const mCount = state.murid.length;
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            const monthRecords = state.rekod.filter(r => {
+                const d = new Date(r.tarikh);
+                return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+            });
+            
+            document.getElementById('dash-tot-murid').innerText = mCount;
+            document.getElementById('dash-tot-tasmik').innerText = monthRecords.length;
+            document.getElementById('dash-tot-iqra').innerText = state.murid.filter(m => m.status==="Iqra'").length;
+            document.getElementById('dash-tot-quran').innerText = state.murid.filter(m => m.status==="Al-Quran").length;
+            document.getElementById('dash-tot-khatam').innerText = state.murid.filter(m => m.status==="Khatam").length;
+            document.getElementById('dash-tot-guru').innerText = state.guru.length;
+
+            // Chart: 6 Months Trend
+            const monthLabels = [];
+            const monthData = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                monthLabels.push(d.toLocaleDateString('ms-MY', { month: 'short' }));
+                const count = state.rekod.filter(r => {
+                    const rd = new Date(r.tarikh);
+                    return rd.getMonth() === d.getMonth() && rd.getFullYear() === d.getFullYear();
+                }).length;
+                monthData.push(count);
+            }
+            renderChart('chartDashBulan', 'line', monthLabels, monthData, 'Jum. Tasmik', '#16a34a');
+
+            // Chart: Class Distribution (Month)
+            const kelasLabels = state.kelas;
+            const kelasData = kelasLabels.map(k => monthRecords.filter(r => r.kelas === k).length);
+            renderChart('chartDashKelas', 'bar', kelasLabels, kelasData, 'Rekod Tasmik', '#3b82f6');
+        }
+
+        function renderMuridTable() {
+            const search = document.getElementById('search-murid').value.toLowerCase();
+            const filterKelas = document.getElementById('filter-kelas-murid').value;
+            
+            let filtered = state.murid.filter(m => 
+                m.nama.toLowerCase().includes(search) && 
+                (filterKelas === '' || m.kelas === filterKelas)
+            );
+
+            const tbody = document.getElementById('tbody-murid');
+            const empty = document.getElementById('empty-murid');
+            
+            if(filtered.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                tbody.innerHTML = filtered.map(m => `
+                    <tr class="hover:bg-gray-50 transition border-b border-gray-50">
+                        <td class="p-4">
+                            <a href="#" onclick="navigate('profil', '${m.id}')" class="font-bold text-sketsa-700 hover:underline">${m.nama}</a>
+                        </td>
+                        <td class="p-4"><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">${m.kelas}</span></td>
+                        <td class="p-4">${getStatusBadge(m.status)}</td>
+                        <td class="p-4 text-gray-600 font-medium">${m.tahap || '-'}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="editMurid('${m.id}')" class="text-blue-500 hover:text-blue-700 mx-1" title="Edit"><i class="fas fa-edit"></i></button>
+                            ${state.currentUser.peranan === 'admin' ? `<button onclick="deleteMurid('${m.id}')" class="text-red-500 hover:text-red-700 mx-1" title="Padam"><i class="fas fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function renderGuruTable() {
+            const tbody = document.getElementById('tbody-guru');
+            tbody.innerHTML = state.guru.map(g => `
+                <tr class="hover:bg-gray-50 transition border-b border-gray-50">
+                    <td class="p-4 font-bold text-gray-800">${g.nama} <span class="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded ml-2">${g.peranan}</span></td>
+                    <td class="p-4 text-gray-600">${g.jawatan || '-'}</td>
+                    <td class="p-4 text-gray-600">${g.username}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="editGuru('${g.id}')" class="text-blue-500 hover:text-blue-700 mx-1"><i class="fas fa-edit"></i></button>
+                        ${g.username !== 'admin' ? `<button onclick="deleteGuru('${g.id}')" class="text-red-500 hover:text-red-700 mx-1"><i class="fas fa-trash"></i></button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderAnalisis() {
+            // Iqra Distribution (All Time)
+            const iqraTahapData = [0,0,0,0,0,0];
+            state.murid.filter(m => m.status === "Iqra'").forEach(m => {
+                let lvl = parseInt(m.tahap.replace(/[^0-9]/g, ''));
+                if(lvl >= 1 && lvl <= 6) iqraTahapData[lvl-1]++;
+            });
+            renderChart('chartAnaIqra', 'bar', ['Iqra 1','Iqra 2','Iqra 3','Iqra 4','Iqra 5','Iqra 6'], iqraTahapData, 'Bil. Murid', '#eab308');
+
+            // Status Distribution
+            const stData = [
+                state.murid.filter(m => m.status === "Iqra'").length,
+                state.murid.filter(m => m.status === "Al-Quran").length,
+                state.murid.filter(m => m.status === "Khatam").length
+            ];
+            renderChart('chartAnaStatus', 'pie', ["Iqra'", "Al-Quran", "Khatam"], stData, 'Status', ['#eab308', '#10b981', '#a855f7']);
+
+            // Analisis Mengikut Kelas
+            updateChartAnaKelas();
+
+            // Guru Records Current Month
+            const curMonth = today.getMonth();
+            const curYear = today.getFullYear();
+            const mRecs = state.rekod.filter(r => {
+                const d = new Date(r.tarikh);
+                return d.getMonth() === curMonth && d.getFullYear() === curYear;
+            });
+            const guruLabels = state.guru.map(g => g.nama);
+            const guruData = state.guru.map(g => mRecs.filter(r => r.guruId === g.id).length);
+            renderChart('chartAnaGuru', 'bar', guruLabels, guruData, 'Rekod Disemak', '#f97316');
+
+            // Kelas Records (All Time)
+            const kelasLabels = state.kelas;
+            const kelasAnaData = kelasLabels.map(k => state.rekod.filter(r => r.kelas === k).length);
+            renderChart('chartAnaKelas', 'bar', kelasLabels, kelasAnaData, 'Jum. Rekod Tasmik', '#3b82f6');
+
+            // Murid tiada rekod bulan ini
+            const muridBerrekod = new Set(mRecs.map(r => r.muridId));
+            const muridTiada = state.murid.filter(m => !muridBerrekod.has(m.id));
+            const listTiada = document.getElementById('list-tiada-rekod');
+            listTiada.innerHTML = muridTiada.map(m => `<li>${m.nama} <span class="text-xs text-gray-500">(${m.kelas})</span></li>`).join('');
+            if(muridTiada.length === 0) listTiada.innerHTML = '<li class="text-green-600 list-none"><i class="fas fa-check-circle"></i> Semua murid telah ditasmik bulan ini. Alhamdulillah!</li>';
+        }
+
+        function updateChartAnaKelas() {
+            const anaFilter = document.getElementById('ana-kelas-filter');
+            if (!anaFilter) return;
+            const kelas = anaFilter.value;
+            
+            let murids = state.murid;
+            let chartTitle = 'Jumlah Murid (Semua Kelas)';
+            
+            if (kelas) {
+                murids = murids.filter(m => m.kelas === kelas);
+                chartTitle = `Jumlah Murid (${kelas})`;
+            }
+            
+            const labels = ["Iqra' 1", "Iqra' 2", "Iqra' 3", "Iqra' 4", "Iqra' 5", "Iqra' 6", "Al-Quran", "Khatam"];
+            const data = [0, 0, 0, 0, 0, 0, 0, 0];
+            
+            murids.forEach(m => {
+                if (m.status === "Iqra'") {
+                    let lvlMatch = m.tahap ? m.tahap.match(/\d+/) : null;
+                    let lvl = lvlMatch ? parseInt(lvlMatch[0]) : 1; // lalai kepada 1
+                    if (lvl >= 1 && lvl <= 6) data[lvl - 1]++;
+                } else if (m.status === "Al-Quran") {
+                    data[6]++;
+                } else if (m.status === "Khatam") {
+                    data[7]++;
+                }
+            });
+            
+            renderChart('chartAnaKelas', 'bar', labels, data, chartTitle, '#3b82f6');
+        }
+
+        function generateLaporan() {
+            const bStr = document.getElementById('lap-bulan').value; // YYYY-MM
+            const kelas = document.getElementById('lap-kelas').value;
+            
+            let filteredRecs = state.rekod;
+            
+            if(bStr) {
+                const [y, m] = bStr.split('-');
+                filteredRecs = filteredRecs.filter(r => {
+                    const d = new Date(r.tarikh);
+                    return d.getFullYear() == y && (d.getMonth()+1) == m;
+                });
+                document.getElementById('lap-subtitle').innerText = `Bulan: ${bStr} ` + (kelas ? ` | Kelas: ${kelas}` : '| Semua Kelas');
+            }
+            if(kelas) {
+                filteredRecs = filteredRecs.filter(r => r.kelas === kelas);
+            }
+
+            // sort by date desc
+            filteredRecs.sort((a,b) => new Date(b.tarikh) - new Date(a.tarikh));
+
+            const tbody = document.getElementById('tbody-laporan');
+            const empty = document.getElementById('empty-laporan');
+
+            if(filteredRecs.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                tbody.innerHTML = filteredRecs.map(r => {
+                    const m = state.murid.find(x => x.id === r.muridId);
+                    const g = state.guru.find(x => x.id === r.guruId);
+                    let pencapaian = r.jenis === "Iqra'" 
+                        ? `Iqra' ${r.iqraTahap} (MS ${r.msMula})`
+                        : `Juzuk ${r.quranJuz} (MS ${r.msMula})`;
+                    
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-3 border border-gray-200">${r.tarikh}</td>
+                            <td class="p-3 border border-gray-200 font-medium">${m ? m.nama : 'Telah Dibuang'}</td>
+                            <td class="p-3 border border-gray-200">${r.kelas}</td>
+                            <td class="p-3 border border-gray-200">${r.jenis}</td>
+                            <td class="p-3 border border-gray-200">${pencapaian}</td>
+                            <td class="p-3 border border-gray-200">${r.statusBacaan}</td>
+                            <td class="p-3 border border-gray-200">${g ? g.nama : '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('lap-title-sekolah').innerText = state.tetapan.namaSekolah;
+        }
+
+        // --- 6. TASMIK FORM LOGIC ---
+        function populateMuridDropdowns() {
+            // Kini dikawal oleh onKelasSelectTasmik, hanya muat semula jika halaman tasmik aktif
+            if(document.getElementById('tas-kelas') && document.getElementById('tas-kelas').value) {
+                onKelasSelectTasmik();
+            }
+        }
+
+        function onKelasSelectTasmik() {
+            const k = document.getElementById('tas-kelas').value;
+            const ddMurid = document.getElementById('tas-murid');
+            const containerPrev = document.getElementById('tas-rekod-terdahulu-container');
+            
+            // Reset fields
+            if(containerPrev) containerPrev.classList.add('hidden');
+            document.getElementById('tas-jenis').value = "Iqra' 1";
+            toggleTasmikFields();
+
+            if(!k) {
+                ddMurid.innerHTML = '<option value="">-- Sila Pilih Kelas Dahulu --</option>';
+                ddMurid.disabled = true;
+                ddMurid.classList.add('bg-gray-50', 'cursor-not-allowed');
+                return;
+            }
+
+            ddMurid.disabled = false;
+            ddMurid.classList.remove('bg-gray-50', 'cursor-not-allowed');
+            
+            // Tapis murid mengikut kelas yang dipilih dan susun ikut abjad
+            const filtered = state.murid.filter(m => m.kelas === k).sort((a,b) => a.nama.localeCompare(b.nama));
+            let html = `<option value="">-- Sila Pilih Murid --</option>`;
+            filtered.forEach(m => {
+                html += `<option value="${m.id}">${m.nama}</option>`;
+            });
+            ddMurid.innerHTML = html;
+        }
+
+        function onMuridSelect() {
+            const mid = document.getElementById('tas-murid').value;
+            const containerPrev = document.getElementById('tas-rekod-terdahulu-container');
+            const textPrev = document.getElementById('tas-rekod-terdahulu-text');
+
+            if(!mid) {
+                if(containerPrev) containerPrev.classList.add('hidden');
+                return;
+            }
+            const m = state.murid.find(x => x.id === mid);
+            if(m) {
+                const prevRecords = state.rekod.filter(r => r.muridId === mid).sort((a,b) => new Date(b.tarikh) - new Date(a.tarikh));
+                
+                let ddVal = "Iqra' 1";
+                if(m.status === "Iqra'") {
+                    if (prevRecords.length > 0 && prevRecords[0].jenis === "Iqra'") {
+                        ddVal = `Iqra' ${prevRecords[0].iqraTahap}`;
+                    } else {
+                         let lvlMatch = m.tahap ? m.tahap.match(/\d+/) : null;
+                         if (lvlMatch) {
+                             let lvl = parseInt(lvlMatch[0]);
+                             if(lvl >= 1 && lvl <= 6) ddVal = `Iqra' ${lvl}`;
+                         }
+                    }
+                } else {
+                    ddVal = m.status;
+                }
+
+                document.getElementById('tas-jenis').value = ddVal;
+                toggleTasmikFields();
+
+                // Cari rekod terdahulu untuk dipaparkan sebagai rujukan
+                if(prevRecords.length > 0) {
+                    const lastRec = prevRecords[0];
+                    let details = lastRec.jenis === "Iqra'" 
+                        ? `Iqra' ${lastRec.iqraTahap} (Muka Surat ${lastRec.msMula})`
+                        : `Juzuk ${lastRec.quranJuz} (Muka Surat ${lastRec.msMula})`;
+                    
+                    let catatanText = lastRec.catatan ? `<br><span class="italic text-gray-600 mt-1 block"><i class="fas fa-quote-left text-xs mr-1"></i> ${lastRec.catatan}</span>` : '';
+                    
+                    textPrev.innerHTML = `Pada <b>${lastRec.tarikh}</b>, murid mencapai tahap <b>${details}</b> dengan status <b>${lastRec.statusBacaan}</b>.${catatanText}`;
+                    containerPrev.classList.remove('hidden');
+                } else {
+                    textPrev.innerHTML = "Tiada rekod tasmik terdahulu dijumpai. Ini merupakan bacaan pertama murid.";
+                    containerPrev.classList.remove('hidden');
+                }
+            }
+        }
+
+        function toggleTasmikFields() {
+            const jenis = document.getElementById('tas-jenis').value;
+            const dIqra = document.getElementById('div-iqra');
+            const dQuran = document.getElementById('div-quran');
+            
+            if(jenis.startsWith("Iqra'")) {
+                dIqra.classList.remove('hidden');
+                dQuran.classList.add('hidden');
+            } else {
+                dIqra.classList.add('hidden');
+                dQuran.classList.remove('hidden');
+            }
+        }
+
+        function handleSimpanTasmik(e) {
+            e.preventDefault();
+            
+            const mid = document.getElementById('tas-murid').value;
+            if(!mid) { showToast('Sila pilih murid!', 'error'); return; }
+
+            const mData = state.murid.find(x => x.id === mid);
+            const jenisRaw = document.getElementById('tas-jenis').value;
+            const jenisBase = jenisRaw.startsWith("Iqra'") ? "Iqra'" : jenisRaw;
+            
+            const rekodBaru = {
+                id: 'r' + Date.now(),
+                tarikh: document.getElementById('tas-tarikh').value,
+                muridId: mid,
+                kelas: document.getElementById('tas-kelas').value,
+                guruId: state.currentUser.id,
+                jenis: jenisBase,
+                statusBacaan: document.querySelector('input[name="tas-status"]:checked').value,
+                catatan: document.getElementById('tas-catatan').value
+            };
+
+            if(jenisBase === "Iqra'") {
+                rekodBaru.iqraTahap = jenisRaw.replace("Iqra' ", "");
+                rekodBaru.msMula = document.getElementById('tas-iqra-mula').value;
+                rekodBaru.msAkhir = ''; // format keserasian lama
+                // Auto update student current level
+                if(rekodBaru.statusBacaan === 'Lancar') mData.tahap = `Tahap ${rekodBaru.iqraTahap}`;
+            } else {
+                rekodBaru.quranJuz = document.getElementById('tas-quran-juz').value;
+                rekodBaru.quranSurah = '';
+                rekodBaru.msMula = document.getElementById('tas-quran-mula').value;
+                rekodBaru.msAkhir = ''; // format keserasian lama
+                // Auto update student current level
+                if(rekodBaru.statusBacaan === 'Lancar') mData.tahap = `Juzuk ${rekodBaru.quranJuz}`;
+            }
+
+            // Update student overall status if changed in form
+            mData.status = jenisBase;
+
+            state.rekod.push(rekodBaru);
+            showToast('Rekod tasmik berjaya disimpan!');
+            
+            // Reset form partly
+            document.getElementById('form-tasmik').reset();
+            document.getElementById('tas-tarikh').valueAsDate = new Date();
+            document.getElementById('tas-guru').value = state.currentUser.nama;
+            onKelasSelectTasmik(); // Reset pilihan murid
+            document.getElementById('tas-kelas').focus();
+        }
+
+        // --- 7. PROFIL MURID ---
+        function renderProfil(muridId) {
+            const m = state.murid.find(x => x.id === muridId);
+            if(!m) return;
+
+            document.getElementById('pro-nama').innerText = m.nama;
+            document.getElementById('pro-kelas').innerText = m.kelas;
+            document.getElementById('pro-status').innerText = m.status;
+            document.getElementById('pro-tahap').innerText = m.tahap || '-';
+
+            const pRekod = state.rekod.filter(r => r.muridId === m.id).sort((a,b) => new Date(b.tarikh) - new Date(a.tarikh));
+            document.getElementById('pro-jum').innerText = pRekod.length;
+            document.getElementById('pro-lastdate').innerText = pRekod.length > 0 ? pRekod[0].tarikh : 'Tiada';
+
+            const tbody = document.getElementById('tbody-profil-rekod');
+            const empty = document.getElementById('empty-profil-rekod');
+
+            if(pRekod.length === 0) {
+                tbody.innerHTML = '';
+                empty.classList.remove('hidden');
+            } else {
+                empty.classList.add('hidden');
+                tbody.innerHTML = pRekod.map(r => {
+                    const g = state.guru.find(x => x.id === r.guruId);
+                    let pencapaian = r.jenis === "Iqra'" 
+                        ? `Iqra' ${r.iqraTahap} <span class="text-xs text-gray-500">(ms ${r.msMula})</span>`
+                        : `Juzuk ${r.quranJuz} <span class="text-xs text-gray-500">(ms ${r.msMula})</span>`;
+                    
+                    let sBadge = r.statusBacaan === 'Lancar' ? '<span class="text-green-600 font-bold"><i class="fas fa-check"></i> Lancar</span>' : 
+                                (r.statusBacaan === 'Perlu Ulang' ? '<span class="text-orange-500 font-bold"><i class="fas fa-redo"></i> Ulang</span>' : 
+                                '<span class="text-red-500 font-bold"><i class="fas fa-times"></i> Belum</span>');
+
+                    return `
+                        <tr class="hover:bg-gray-50">
+                            <td class="p-4 whitespace-nowrap text-gray-600">${r.tarikh}</td>
+                            <td class="p-4 font-semibold text-gray-800">${r.jenis}</td>
+                            <td class="p-4">${pencapaian}</td>
+                            <td class="p-4">${sBadge}</td>
+                            <td class="p-4 text-gray-600">${g ? g.nama : '-'}</td>
+                            <td class="p-4 text-gray-500 text-xs italic max-w-xs truncate" title="${r.catatan}">${r.catatan || '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+        }
+
+        // --- 8. CRUD MURID & GURU ---
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+            if(id==='modal-murid') document.getElementById('form-modal-murid').reset();
+            if(id==='modal-guru') document.getElementById('form-modal-guru').reset();
+        }
+
+        // --- Custom Confirm Logic ---
+        let confirmCallback = null;
+        
+        function showConfirm(msg, callback) {
+            document.getElementById('confirm-msg').innerText = msg;
+            confirmCallback = callback;
+            document.getElementById('modal-confirm').classList.remove('hidden');
+        }
+
+        function closeConfirm() {
+            document.getElementById('modal-confirm').classList.add('hidden');
+            confirmCallback = null;
+        }
+
+        function executeConfirm() {
+            if(confirmCallback) confirmCallback();
+            closeConfirm();
+        }
+        // ----------------------------
+
+        function saveMurid(e) {
+            e.preventDefault();
+            const id = document.getElementById('m-id').value;
+            const newData = {
+                id: id ? id : 'm' + Date.now(),
+                nama: document.getElementById('m-nama').value,
+                kelas: document.getElementById('m-kelas').value,
+                status: document.getElementById('m-status').value,
+                tahap: document.getElementById('m-tahap').value,
+                tarikhDaftar: new Date().toISOString().split('T')[0]
+            };
+
+            if(id) {
+                const idx = state.murid.findIndex(m => m.id === id);
+                if(idx > -1) { state.murid[idx] = {...state.murid[idx], ...newData}; }
+                showToast('Rekod murid dikemaskini!');
+            } else {
+                state.murid.push(newData);
+                showToast('Murid baru ditambah!');
+            }
+            populateMuridDropdowns();
+            renderMuridTable();
+            closeModal('modal-murid');
+        }
+
+        function editMurid(id) {
+            const m = state.murid.find(x => x.id === id);
+            if(!m) return;
+            document.getElementById('modal-murid-title').innerText = 'Kemaskini Murid';
+            document.getElementById('m-id').value = m.id;
+            document.getElementById('m-nama').value = m.nama;
+            document.getElementById('m-kelas').value = m.kelas;
+            document.getElementById('m-status').value = m.status;
+            document.getElementById('m-tahap').value = m.tahap;
+            openModal('modal-murid');
+        }
+
+        function deleteMurid(id) {
+            showConfirm('Adakah anda pasti untuk memadam murid ini? Semua rekod tasmiknya akan kekal tetapi tanpa nama.', () => {
+                state.murid = state.murid.filter(x => x.id !== id);
+                renderMuridTable();
+                populateMuridDropdowns();
+                showToast('Murid telah dipadam.');
+            });
+        }
+
+        function saveGuru(e) {
+            e.preventDefault();
+            const id = document.getElementById('g-id').value;
+            const newData = {
+                id: id ? id : 'g' + Date.now(),
+                nama: document.getElementById('g-nama').value,
+                jawatan: document.getElementById('g-jawatan').value,
+                username: document.getElementById('g-username').value,
+                password: document.getElementById('g-password').value,
+                peranan: 'guru'
+            };
+
+            if(id) {
+                const idx = state.guru.findIndex(g => g.id === id);
+                if(idx > -1) { 
+                    newData.peranan = state.guru[idx].peranan; // keep original role
+                    state.guru[idx] = {...state.guru[idx], ...newData}; 
+                }
+                showToast('Rekod guru dikemaskini!');
+            } else {
+                state.guru.push(newData);
+                showToast('Guru baru ditambah!');
+            }
+            renderGuruTable();
+            closeModal('modal-guru');
+        }
+
+        function editGuru(id) {
+            const g = state.guru.find(x => x.id === id);
+            if(!g) return;
+            document.getElementById('modal-guru-title').innerText = 'Kemaskini Guru';
+            document.getElementById('g-id').value = g.id;
+            document.getElementById('g-nama').value = g.nama;
+            document.getElementById('g-jawatan').value = g.jawatan;
+            document.getElementById('g-username').value = g.username;
+            document.getElementById('g-password').value = g.password;
+            openModal('modal-guru');
+        }
+
+        function deleteGuru(id) {
+            showConfirm('Pasti untuk memadam guru ini dari sistem?', () => {
+                state.guru = state.guru.filter(x => x.id !== id);
+                renderGuruTable();
+                showToast('Guru dipadam.');
+            });
+        }
+
+        // --- 9. TETAPAN ---
+        function renderTetapan() {
+            document.getElementById('set-namasekolah').value = state.tetapan.namaSekolah;
+            updateLogoUI();
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    state.tetapan.logo = e.target.result;
+                    updateLogoUI();
+                    showToast('Logo sekolah berjaya dikemaskini.');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateLogoUI() {
+            const logoData = state.tetapan.logo;
+            const loginContainer = document.getElementById('login-logo-container');
+            const sidebarContainer = document.getElementById('sidebar-logo-container');
+            const tetapanPreview = document.getElementById('preview-logo-tetapan');
+
+            if (logoData) {
+                const imgTag = `<img src="${logoData}" class="w-full h-full object-contain">`;
+                if(loginContainer) loginContainer.innerHTML = imgTag;
+                if(sidebarContainer) sidebarContainer.innerHTML = imgTag;
+                if(tetapanPreview) tetapanPreview.innerHTML = imgTag;
+            } else {
+                if(loginContainer) loginContainer.innerHTML = `<i class="fas fa-book-open text-3xl text-sketsa-600"></i>`;
+                if(sidebarContainer) sidebarContainer.innerHTML = `<i class="fas fa-quran text-2xl text-sketsa-400"></i>`;
+                if(tetapanPreview) tetapanPreview.innerHTML = `<i class="fas fa-image text-gray-400 text-2xl"></i>`;
+            }
+        }
+
+        function saveTetapanSekolah() {
+            const val = document.getElementById('set-namasekolah').value;
+            if(val) {
+                state.tetapan.namaSekolah = val;
+                document.getElementById('login-school-name').innerText = val;
+                document.getElementById('sidebar-school-name').innerText = val;
+                showToast('Nama sekolah dikemaskini.');
+            }
+        }
+
+        function tambahKelas() {
+            const k = document.getElementById('set-newkelas').value.trim();
+            if(k && !state.kelas.includes(k)) {
+                state.kelas.push(k);
+                state.kelas.sort();
+                populateKelasDropdowns();
+                document.getElementById('set-newkelas').value = '';
+                showToast('Kelas ditambah.');
+            }
+        }
+
+        function hapusKelas(k) {
+            showConfirm(`Padam kelas ${k}? Semua murid di dalam kelas ini tidak akan mempunyai rujukan kelas.`, () => {
+                state.kelas = state.kelas.filter(x => x !== k);
+                populateKelasDropdowns();
+                showToast('Kelas dipadam.');
+            });
+        }
+
+        // --- 10. UTILS & HELPERS ---
+        function getStatusBadge(status) {
+            if(status === "Iqra'") return `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Iqra'</span>`;
+            if(status === "Al-Quran") return `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Al-Quran</span>`;
+            if(status === "Khatam") return `<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Khatam</span>`;
+            return status;
+        }
+
+        function renderChart(canvasId, type, labels, data, datasetLabel, color) {
+            const ctx = document.getElementById(canvasId);
+            if(!ctx) return;
+            
+            if(currentChartInstances[canvasId]) {
+                currentChartInstances[canvasId].destroy();
+            }
+            
+            let config = {
+                type: type,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: datasetLabel,
+                        data: data,
+                        backgroundColor: color,
+                        borderColor: type==='line' ? color : 'transparent',
+                        tension: 0.3,
+                        fill: type==='line' ? true : false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: type==='pie' } }
+                }
+            };
+            currentChartInstances[canvasId] = new Chart(ctx, config);
+        }
+
+        function exportExcel() {
+            // Simple CSV export
+            const bStr = document.getElementById('lap-bulan').value;
+            let csv = "Tarikh,Nama Murid,Kelas,Jenis,Juz/Tahap,MS,Status,Guru,Catatan\n";
+            
+            const rows = document.querySelectorAll('#tbody-laporan tr');
+            if(rows.length===0) { showToast('Tiada data untuk dieksport', 'error'); return; }
+            
+            rows.forEach(tr => {
+                const cols = tr.querySelectorAll('td');
+                const rowData = Array.from(cols).map(c => `"${c.innerText.replace(/"/g, '""')}"`);
+                csv += rowData.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Laporan_Tasmik_${bStr||'Semua'}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function cetakPDF() {
+            // Gunakan fungsi native print dengan media query CSS untuk hasil terpantas dan tepat
+            window.print();
+        }
+
+        // Init visibility toggle for specific fields
+        document.addEventListener('DOMContentLoaded', () => {
+             // Let it be initialized by user login
+        });
+
+    </script>
+</body>
+</html>
