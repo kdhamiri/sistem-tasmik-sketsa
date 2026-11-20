@@ -594,14 +594,19 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Status Awal <span class="text-red-500">*</span></label>
                         <select id="m-status" required class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
-                            <option value="Iqra'">Iqra'</option>
+                            <option value="Iqra' 1">Iqra' 1</option>
+                            <option value="Iqra' 2">Iqra' 2</option>
+                            <option value="Iqra' 3">Iqra' 3</option>
+                            <option value="Iqra' 4">Iqra' 4</option>
+                            <option value="Iqra' 5">Iqra' 5</option>
+                            <option value="Iqra' 6">Iqra' 6</option>
                             <option value="Al-Quran">Al-Quran</option>
                             <option value="Khatam">Khatam</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Tahap / Juz Semasa</label>
-                        <input type="text" id="m-tahap" placeholder="Cth: Iqra 3 / Juz 1" class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Muka Surat Semasa</label>
+                        <input type="text" id="m-tahap" placeholder="Cth: MS 15 atau Juz 1 MS 2" class="w-full border-gray-300 rounded border p-2 focus:ring-sketsa-500">
                     </div>
                 </div>
                 <div class="pt-4 flex justify-end gap-2 border-t mt-4">
@@ -678,9 +683,9 @@
                 { id: 'g2', nama: 'Ustazah Siti', jawatan: 'Ketua Panitia', username: 'admin', password: 'admin', peranan: 'admin' }
             ],
             murid: [
-                { id: 'm1', nama: 'Ahmad Albab', kelas: '1 Arif', status: "Iqra'", tahap: "Tahap 3", tarikhDaftar: '2024-01-02' },
-                { id: 'm2', nama: 'Siti Nurhaliza', kelas: '2 Bestari', status: "Al-Quran", tahap: "Juz 2", tarikhDaftar: '2024-01-03' },
-                { id: 'm3', nama: 'Amiruddin Ali', kelas: '3 Cerdik', status: "Iqra'", tahap: "Tahap 5", tarikhDaftar: '2024-01-05' },
+                { id: 'm1', nama: 'Ahmad Albab', kelas: '1 Arif', status: "Iqra' 3", tahap: "MS 15", tarikhDaftar: '2024-01-02' },
+                { id: 'm2', nama: 'Siti Nurhaliza', kelas: '2 Bestari', status: "Al-Quran", tahap: "Juz 2 MS 14", tarikhDaftar: '2024-01-03' },
+                { id: 'm3', nama: 'Amiruddin Ali', kelas: '3 Cerdik', status: "Iqra' 5", tahap: "MS 20", tarikhDaftar: '2024-01-05' },
                 { id: 'm4', nama: 'Fatimah Az-Zahra', kelas: '4 Dedikasi', status: "Khatam", tahap: "Khatam", tarikhDaftar: '2023-01-10' }
             ],
             rekod: [] // Will hold tasmik records
@@ -697,15 +702,17 @@
             let pastDate = new Date();
             pastDate.setDate(today.getDate() - Math.floor(Math.random() * 90));
             
+            let isIqra = mData.status.startsWith("Iqra'");
+            
             state.rekod.push({
                 id: 'r' + Date.now() + i,
                 tarikh: pastDate.toISOString().split('T')[0],
                 muridId: mId,
                 kelas: mData.kelas,
                 guruId: gId,
-                jenis: mData.status,
-                iqraTahap: mData.status === "Iqra'" ? Math.floor(Math.random() * 6)+1 : '',
-                quranJuz: mData.status !== "Iqra'" ? Math.floor(Math.random() * 30)+1 : '',
+                jenis: isIqra ? "Iqra'" : mData.status,
+                iqraTahap: isIqra ? mData.status.replace("Iqra' ", "") : '',
+                quranJuz: !isIqra ? Math.floor(Math.random() * 30)+1 : '',
                 quranSurah: '',
                 msMula: Math.floor(Math.random() * 20)+1, msAkhir: '',
                 statusBacaan: 'Lancar',
@@ -859,9 +866,9 @@
             
             document.getElementById('dash-tot-murid').innerText = mCount;
             document.getElementById('dash-tot-tasmik').innerText = monthRecords.length;
-            document.getElementById('dash-tot-iqra').innerText = state.murid.filter(m => m.status==="Iqra'").length;
-            document.getElementById('dash-tot-quran').innerText = state.murid.filter(m => m.status==="Al-Quran").length;
-            document.getElementById('dash-tot-khatam').innerText = state.murid.filter(m => m.status==="Khatam").length;
+            document.getElementById('dash-tot-iqra').innerText = state.murid.filter(m => m.status.startsWith("Iqra'")).length;
+            document.getElementById('dash-tot-quran').innerText = state.murid.filter(m => m.status === "Al-Quran").length;
+            document.getElementById('dash-tot-khatam').innerText = state.murid.filter(m => m.status === "Khatam").length;
             document.getElementById('dash-tot-guru').innerText = state.guru.length;
 
             // Chart: 6 Months Trend
@@ -936,15 +943,15 @@
         function renderAnalisis() {
             // Iqra Distribution (All Time)
             const iqraTahapData = [0,0,0,0,0,0];
-            state.murid.filter(m => m.status === "Iqra'").forEach(m => {
-                let lvl = parseInt(m.tahap.replace(/[^0-9]/g, ''));
+            state.murid.filter(m => m.status.startsWith("Iqra'")).forEach(m => {
+                let lvl = parseInt(m.status.replace(/[^0-9]/g, ''));
                 if(lvl >= 1 && lvl <= 6) iqraTahapData[lvl-1]++;
             });
             renderChart('chartAnaIqra', 'bar', ['Iqra 1','Iqra 2','Iqra 3','Iqra 4','Iqra 5','Iqra 6'], iqraTahapData, 'Bil. Murid', '#eab308');
 
             // Status Distribution
             const stData = [
-                state.murid.filter(m => m.status === "Iqra'").length,
+                state.murid.filter(m => m.status.startsWith("Iqra'")).length,
                 state.murid.filter(m => m.status === "Al-Quran").length,
                 state.murid.filter(m => m.status === "Khatam").length
             ];
@@ -994,9 +1001,8 @@
             const data = [0, 0, 0, 0, 0, 0, 0, 0];
             
             murids.forEach(m => {
-                if (m.status === "Iqra'") {
-                    let lvlMatch = m.tahap ? m.tahap.match(/\d+/) : null;
-                    let lvl = lvlMatch ? parseInt(lvlMatch[0]) : 1; // lalai kepada 1
+                if (m.status.startsWith("Iqra'")) {
+                    let lvl = parseInt(m.status.replace(/[^0-9]/g, ''));
                     if (lvl >= 1 && lvl <= 6) data[lvl - 1]++;
                 } else if (m.status === "Al-Quran") {
                     data[6]++;
@@ -1111,20 +1117,8 @@
             if(m) {
                 const prevRecords = state.rekod.filter(r => r.muridId === mid).sort((a,b) => new Date(b.tarikh) - new Date(a.tarikh));
                 
-                let ddVal = "Iqra' 1";
-                if(m.status === "Iqra'") {
-                    if (prevRecords.length > 0 && prevRecords[0].jenis === "Iqra'") {
-                        ddVal = `Iqra' ${prevRecords[0].iqraTahap}`;
-                    } else {
-                         let lvlMatch = m.tahap ? m.tahap.match(/\d+/) : null;
-                         if (lvlMatch) {
-                             let lvl = parseInt(lvlMatch[0]);
-                             if(lvl >= 1 && lvl <= 6) ddVal = `Iqra' ${lvl}`;
-                         }
-                    }
-                } else {
-                    ddVal = m.status;
-                }
+                let ddVal = m.status || "Iqra' 1";
+                if(ddVal === "Iqra'") ddVal = "Iqra' 1"; // Backup for older unformatted data
 
                 document.getElementById('tas-jenis').value = ddVal;
                 toggleTasmikFields();
@@ -1186,19 +1180,19 @@
                 rekodBaru.iqraTahap = jenisRaw.replace("Iqra' ", "");
                 rekodBaru.msMula = document.getElementById('tas-iqra-mula').value;
                 rekodBaru.msAkhir = ''; // format keserasian lama
-                // Auto update student current level
-                if(rekodBaru.statusBacaan === 'Lancar') mData.tahap = `Tahap ${rekodBaru.iqraTahap}`;
+                // Auto update student current level (Muka Surat)
+                mData.tahap = `MS ${rekodBaru.msMula}`;
             } else {
                 rekodBaru.quranJuz = document.getElementById('tas-quran-juz').value;
                 rekodBaru.quranSurah = '';
                 rekodBaru.msMula = document.getElementById('tas-quran-mula').value;
                 rekodBaru.msAkhir = ''; // format keserasian lama
                 // Auto update student current level
-                if(rekodBaru.statusBacaan === 'Lancar') mData.tahap = `Juzuk ${rekodBaru.quranJuz}`;
+                mData.tahap = `Juz ${rekodBaru.quranJuz} MS ${rekodBaru.msMula}`;
             }
 
-            // Update student overall status if changed in form
-            mData.status = jenisBase;
+            // Update student overall status directly from dropdown
+            mData.status = jenisRaw;
 
             state.rekod.push(rekodBaru);
             showToast('Rekod tasmik berjaya disimpan!');
@@ -1263,8 +1257,16 @@
         }
         function closeModal(id) {
             document.getElementById(id).classList.add('hidden');
-            if(id==='modal-murid') document.getElementById('form-modal-murid').reset();
-            if(id==='modal-guru') document.getElementById('form-modal-guru').reset();
+            if(id==='modal-murid') {
+                document.getElementById('form-modal-murid').reset();
+                document.getElementById('m-id').value = '';
+                document.getElementById('modal-murid-title').innerText = 'Tambah Murid';
+            }
+            if(id==='modal-guru') {
+                document.getElementById('form-modal-guru').reset();
+                document.getElementById('g-id').value = '';
+                document.getElementById('modal-guru-title').innerText = 'Tambah Guru';
+            }
         }
 
         // --- Custom Confirm Logic ---
@@ -1448,10 +1450,10 @@
 
         // --- 10. UTILS & HELPERS ---
         function getStatusBadge(status) {
-            if(status === "Iqra'") return `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">Iqra'</span>`;
+            if(status && status.startsWith("Iqra'")) return `<span class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold">${status}</span>`;
             if(status === "Al-Quran") return `<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold">Al-Quran</span>`;
             if(status === "Khatam") return `<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">Khatam</span>`;
-            return status;
+            return status || '-';
         }
 
         function renderChart(canvasId, type, labels, data, datasetLabel, color) {
